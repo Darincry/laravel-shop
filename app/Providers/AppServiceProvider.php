@@ -34,13 +34,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $kernel = app(Kernel::class);
+
         $kernel->whenRequestLifecycleIsLongerThan(
             CarbonInterval::seconds(4),
-            function(Connection $connection) {
+            function () {
                 logger()
                     ->channel('telegram')
-                    ->debug('whenRequestLifecycleIsLongerThan:' . request()->ip() . ' - ' . request()->url() );
+                    ->debug('whenRequestLifecycleIsLongerThan:' . request()->url());
             }
         );
+
     }
 }
