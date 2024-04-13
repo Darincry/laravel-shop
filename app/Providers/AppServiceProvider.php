@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use App\Faker\FakerImageProvider;
 use App\Http\Kernel;
 use Carbon\CarbonInterval;
+use Faker\Factory;
+use Faker\Generator;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -11,31 +14,30 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
-        //
+        $this->app->singleton(Generator::class, function () {
+            $faker = Factory::create();
+            $faker->addProvider(new FakerImageProvider($faker));
+            return $faker;
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        Model::preventLazyLoading(!app()->isProduction());
-        Model::preventsSilentlyDiscardingAttributes(!app()->isProduction());
+        Model::shouldBeStrict(!app()->isProduction());
 
-        DB::whenQueryingForLongerThan(500, function (Connection $connection) {
-            logger()
-                ->channel('telegram')
-                ->debug('whenQueryingForLongerThan:' . $connection->query()->toSql());
-        });
+        if (app()->isProduction()) {
+            DB::listen(function ($query) {
+                if ($query->time() > 100) {
+                    logger()
+                        ->channel('telegram')
+                        ->debug('query longer than 1ms:' . $query->sql, $query->bindings);
+                }
+            });
+        }
 
-        $kernel = app(Kernel::class);
-
-        $kernel->whenRequestLifecycleIsLongerThan(
+        app(Kernel::class)->whenRequestLifecycleIsLongerThan(
             CarbonInterval::seconds(4),
             function () {
                 logger()
@@ -43,6 +45,5 @@ class AppServiceProvider extends ServiceProvider
                     ->debug('whenRequestLifecycleIsLongerThan:' . request()->url());
             }
         );
-
     }
 }
