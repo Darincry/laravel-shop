@@ -13,6 +13,13 @@
 
     </head>
     <body class="antialiased">
-
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px;" class="products">
+            @foreach($products as $product)
+                <div class="product">
+                    <h3 style="font-size: 30px; text-align: center;">{{ $product->title }}</h3>
+                    <img src="{{ $product->thumbnail }}" alt="">
+                </div>
+            @endforeach
+        </div>
     </body>
 </html>

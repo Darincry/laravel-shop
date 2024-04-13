@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $products = \App\Models\Product::query()->get();
+    return view('welcome')->with([
+        'products' => $products
+    ]);
 });
 
